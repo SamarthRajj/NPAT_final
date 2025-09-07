@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Game Lobby</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/lobby.js" defer></script>
+</head>
+<body>
+  <h1>Game Lobby</h1>
+  <h3>Room ID: <span id="roomId"></span></h3>
+
+  <h4>Players:</h4>
+  <ul id="players"></ul>
+
+  <button id="startBtn" style="display:none;">Start Game</button>
+
+  <!-- <h4>Debug Log</h4>
+  <pre id="debugLog" style="max-height:200px; overflow:auto; background:#f5f5f5; padding:8px;"></pre> -->
+</body>
+</html>

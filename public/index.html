@@ -2,14 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>
-    NPAT
-  </title>
+  <title>Game Lobby</title>
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/socket.js" defer></script>
 </head>
 <body>
-  <h1>NPAT</h1>
-  <p id="status">Connecting to server...</p>
+  <h1>Multiplayer Game</h1>
+
+  <div id="login">
+    <input id="username" placeholder="Enter username">
+    <button id="loginBtn">Login</button>
+  </div>
+
+  <div id="lobbyActions" style="display:none;">
+    <input id="roomId" placeholder="Enter Room ID">
+    <button id="createBtn">Create Room</button>
+    <button id="joinBtn">Join Room</button>
+  </div>
+
+  <p id="status">Not connected</p>
+
+  <!-- Removed duplicate Socket.IO and socket.js includes to avoid multiple connections -->
 </body>
+
 </html>
