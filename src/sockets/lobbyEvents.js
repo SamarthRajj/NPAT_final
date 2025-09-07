@@ -57,19 +57,71 @@ function lobbyEvents(io, socket) {
     io.to(roomId).emit("roomUpdated", room);
   });
 
+  // Start game (admin only)
+  socket.on("startGame", ({ roomId }, callback) => {
+    console.log(`[Lobby] startGame requested by userId=${socket.user.userId} roomId=${roomId}`);
+    const room = getRoom(roomId);
+    if (!room) {
+      console.warn(`[Lobby] startGame failed; room not found roomId=${roomId}`);
+      if (callback) callback({ success: false, message: "Room not found" });
+      return;
+    }
+    
+    // Check if user is the admin/creator
+    if (room.creator !== socket.user.userId) {
+      console.warn(`[Lobby] startGame failed; user is not admin userId=${socket.user.userId} creator=${room.creator}`);
+      if (callback) callback({ success: false, message: "Only admin can start the game" });
+      return;
+    }
+    
+    // Check if room has at least 2 players
+    if (room.players.length < 2) {
+      console.warn(`[Lobby] startGame failed; not enough players roomId=${roomId} players=${room.players.length}`);
+      if (callback) callback({ success: false, message: "Need at least 2 players to start" });
+      return;
+    }
+    
+    // Set room status to in-progress
+    room.status = "in-progress";
+    console.log(`[Lobby] startGame success; room status set to in-progress roomId=${roomId}`);
+    
+    if (callback) callback({ success: true, room });
+    
+    // Emit gameStart to all players in the room
+    console.log(`[Lobby] Emitting gameStart to roomId=${roomId} players=${room.players.length}`);
+    io.to(roomId).emit("gameStart", { roomId, room });
+  });
+
   // Handle disconnect
   socket.on("disconnect", (reason) => {
     console.log(`[Lobby] disconnect fired userId=${socket.user.userId} reason=${reason}`);
-    // Remove player from all rooms they were in
-    io.sockets.adapter.rooms.forEach((_, roomId) => {
-      console.log(`[Lobby] disconnect userId=${socket.user.userId} removing from roomId=${roomId}`);
-      removePlayerFromRoom(roomId, socket.user.userId);
-      const room = getRoom(roomId);
-      if (room) {
-        console.log(`[Lobby] Emitting roomUpdated (disconnect) to roomId=${roomId} players=${room.players.length}`);
-        io.to(roomId).emit("roomUpdated", room);
+    
+    // Only remove player from rooms if it's a real disconnect (not page navigation)
+    // Page navigation typically has reason "client namespace disconnect" or "transport close"
+    // We'll use a timeout to distinguish between navigation and real disconnection
+    const userId = socket.user.userId;
+    
+    setTimeout(() => {
+      // Check if user has reconnected (new socket with same userId)
+      const userReconnected = Array.from(io.sockets.sockets.values())
+        .some(s => s.user && s.user.userId === userId);
+      
+      if (!userReconnected) {
+        console.log(`[Lobby] User ${userId} did not reconnect, removing from all rooms`);
+        // Remove player from all rooms they were in
+        io.sockets.adapter.rooms.forEach((_, roomId) => {
+          console.log(`[Lobby] disconnect userId=${userId} removing from roomId=${roomId}`);
+          removePlayerFromRoom(roomId, userId);
+          const room = getRoom(roomId);
+          if (room) {
+            console.log(`[Lobby] Emitting roomUpdated (disconnect) to roomId=${roomId} players=${room.players.length}`);
+            io.to(roomId).emit("roomUpdated", room);
+          }
+        });
+      } else {
+        console.log(`[Lobby] User ${userId} reconnected, keeping in rooms`);
       }
-    });
+    }, 2000); // 2 second delay to allow for reconnection
   });
 }
 

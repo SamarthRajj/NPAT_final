@@ -22,6 +22,7 @@ function createRoom(roomId, user) {
     id: roomId,
     creator: user.userId,
     players: [user], // store full user info { userId, username }
+    status: "waiting",
   };
   console.log("createRoom", room);
   rooms.set(roomId, room);

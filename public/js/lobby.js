@@ -64,6 +64,21 @@ socket.on("roomUpdated", (room) => {
   }
 });
 
+// Handle Start Game button click
+document.getElementById("startBtn").addEventListener("click", () => {
+  socket.emit("startGame", { roomId }, (res) => {
+    if (!res || !res.success) {
+      alert(res?.message || "Failed to start game");
+    }
+  });
+});
+
+// Listen for game start event
+socket.on("gameStart", (data) => {
+  console.log("Game starting, redirecting to game page...", data);
+  window.location.href = `/game.html?roomId=${data.roomId}`;
+});
+
 // Utility: decode JWT payload (client-side only)
 function parseJwt(token) {
   const base64Url = token.split(".")[1];
