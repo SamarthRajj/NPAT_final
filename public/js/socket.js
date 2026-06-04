@@ -19,8 +19,8 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
   const success = await login(username);
   if (success) {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("lobbyActions").style.display = "block";
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("lobbyActions").classList.remove("hidden");
     connectSocket();
   } else {
     alert("Login failed");

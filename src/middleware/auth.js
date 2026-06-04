@@ -1,9 +1,9 @@
 const jwt = require("jsonwebtoken");
 
-const SECRET_KEY = "supersecretkey"; // env file
+const SECRET_KEY = process.env.JWT_SECRET || "dev-only-change-in-production";
 
 function generateToken(payload) {
-  return jwt.sign(payload, SECRET_KEY, { expiresIn: "1h" });
+  return jwt.sign(payload, SECRET_KEY, { expiresIn: "24h" });
 }
 
 function verifyToken(token) {

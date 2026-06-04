@@ -2,12 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Game Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NPAT — Game</title>
+  <link rel="stylesheet" href="css/styles.css">
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/game.js" defer></script>
 </head>
 <body>
-  <h1>Game Started 🎮</h1>
-  <p>Room: <span id="roomId"></span></p>
+  <main class="page">
+    <header class="page-header">
+      <h1>NPAT</h1>
+      <p class="tagline">Room <span class="room-code" id="roomId"></span></p>
+    </header>
+
+    <section class="card game-container">
+      <div class="game-meta">
+        <span>Round <span id="currentRound">-</span> / <span id="totalRounds">3</span></span>
+        <span><span id="playerCount">-</span> players</span>
+      </div>
+
+      <div id="gameStatus" class="game-status status-waiting">
+        Waiting for admin to start a round…
+      </div>
+
+      <div id="gameContent" class="hidden">
+        <div class="letter-tile" aria-label="Current letter">
+          <span id="currentLetter">-</span>
+        </div>
+
+        <form id="submissionForm" class="submission-form">
+          <div class="field">
+            <label for="nameInput">Name</label>
+            <input type="text" id="nameInput" required autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="placeInput">Place</label>
+            <input type="text" id="placeInput" required autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="animalInput">Animal</label>
+            <input type="text" id="animalInput" required autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="thingInput">Thing</label>
+            <input type="text" id="thingInput" required autocomplete="off">
+          </div>
+          <button type="submit" id="submitBtn" class="btn btn-primary">Submit answer</button>
+        </form>
+
+        <div class="players-status">
+          <h3 style="margin:1.5rem 0 0;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Players</h3>
+          <div id="playersList" class="players-list"></div>
+        </div>
+      </div>
+
+      <div id="adminControls" class="admin-controls hidden">
+        <h3>Admin</h3>
+        <div class="btn-row" style="justify-content:center">
+          <button type="button" id="startRoundBtn" class="btn btn-primary">Start round</button>
+          <button type="button" id="nextRoundBtn" class="btn btn-secondary hidden">Next round</button>
+        </div>
+      </div>
+    </section>
+  </main>
 </body>
 </html>

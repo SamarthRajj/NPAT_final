@@ -2,20 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Game Lobby</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NPAT — Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/lobby.js" defer></script>
 </head>
 <body>
-  <h1>Game Lobby</h1>
-  <h3>Room ID: <span id="roomId"></span></h3>
+  <main class="page">
+    <header class="page-header">
+      <h1>Lobby</h1>
+      <p class="tagline">Room <span class="room-code" id="roomId"></span></p>
+    </header>
 
-  <h4>Players:</h4>
-  <ul id="players"></ul>
-
-  <button id="startBtn" style="display:none;">Start Game</button>
-
-  <!-- <h4>Debug Log</h4>
-  <pre id="debugLog" style="max-height:200px; overflow:auto; background:#f5f5f5; padding:8px;"></pre> -->
+    <section class="card">
+      <h2 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Players</h2>
+      <ul id="players" class="player-list"></ul>
+      <button type="button" id="startBtn" class="btn btn-primary hidden">Start game</button>
+    </section>
+  </main>
 </body>
 </html>

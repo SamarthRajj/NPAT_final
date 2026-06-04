@@ -51,16 +51,21 @@ socket.on("roomUpdated", (room) => {
   const playersList = document.getElementById("players");
   playersList.innerHTML = "";
 
+  const decoded = parseJwt(token);
+
   room.players.forEach((player) => {
     const li = document.createElement("li");
-    li.textContent = `${player.username} ${player.userId === room.creator ? "(Admin)" : ""}`;
+    li.className = "player-chip";
+    if (player.userId === decoded.userId) li.classList.add("you");
+    li.textContent = `${player.username}${player.userId === room.creator ? " · Admin" : ""}`;
     playersList.appendChild(li);
   });
 
-  // If I'm the creator, show "Start Game" button
-  const decoded = parseJwt(token);
-  if (room.creator === decoded.userId) {
-    document.getElementById("startBtn").style.display = "block";
+  const startBtn = document.getElementById("startBtn");
+  if (room.creator === decoded.userId && room.players.length >= 2) {
+    startBtn.classList.remove("hidden");
+  } else {
+    startBtn.classList.add("hidden");
   }
 });
 

@@ -2,27 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Game Lobby</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NPAT — Play</title>
+  <link rel="stylesheet" href="css/styles.css">
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/socket.js" defer></script>
 </head>
 <body>
-  <h1>Multiplayer Game</h1>
+  <main class="page">
+    <header class="page-header">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <h1>NPAT</h1>
+      <p class="tagline">Name · Place · Animal · Thing — real-time multiplayer</p>
+    </header>
 
-  <div id="login">
-    <input id="username" placeholder="Enter username">
-    <button id="loginBtn">Login</button>
-  </div>
+    <section class="card">
+      <div id="login">
+        <div class="field">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Your name" autocomplete="username">
+        </div>
+        <button type="button" id="loginBtn" class="btn btn-primary">Enter</button>
+      </div>
 
-  <div id="lobbyActions" style="display:none;">
-    <input id="roomId" placeholder="Enter Room ID">
-    <button id="createBtn">Create Room</button>
-    <button id="joinBtn">Join Room</button>
-  </div>
+      <div id="lobbyActions" class="hidden">
+        <div class="field">
+          <label for="roomId">Room code</label>
+          <input type="text" id="roomId" placeholder="Enter or create a room ID">
+        </div>
+        <div class="btn-row">
+          <button type="button" id="createBtn" class="btn btn-primary">Create room</button>
+          <button type="button" id="joinBtn" class="btn btn-secondary">Join room</button>
+        </div>
+      </div>
 
-  <p id="status">Not connected</p>
-
-  <!-- Removed duplicate Socket.IO and socket.js includes to avoid multiple connections -->
+      <p id="status" class="status">Not connected</p>
+    </section>
+  </main>
 </body>
-
 </html>

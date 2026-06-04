@@ -1,4 +1,15 @@
-const { createRoom, joinRoom, getRoom, removePlayerFromRoom } = require("../game/roomManager");
+const {
+  createRoom,
+  joinRoom,
+  getRoom,
+  removePlayerFromRoom,
+  initializeGameState,
+} = require("../game/roomManager");
+
+function trackRoom(socket, roomId) {
+  if (!socket.data.gameRoomIds) socket.data.gameRoomIds = new Set();
+  socket.data.gameRoomIds.add(roomId);
+}
 
 function lobbyEvents(io, socket) {
   // Create room
@@ -7,6 +18,7 @@ function lobbyEvents(io, socket) {
     const result = createRoom(roomId, socket.user);
     if (result.success) {
       socket.join(roomId);
+      trackRoom(socket, roomId);
       console.log(`[Lobby] createRoom success; joined socket to roomId=${roomId}`);
       callback({ success: true, room: result.room });
       console.log(`[Lobby] Emitting roomUpdated to roomId=${roomId} players=${result.room.players.length}`);
@@ -23,6 +35,7 @@ function lobbyEvents(io, socket) {
     const result = joinRoom(roomId, socket.user);
     if (result.success) {
       socket.join(roomId);
+      trackRoom(socket, roomId);
       console.log(`[Lobby] joinRoom success; joined socket to roomId=${roomId}`);
       callback({ success: true, room: result.room });
       console.log(`[Lobby] Emitting roomUpdated to roomId=${roomId} players=${result.room.players.length}`);
@@ -51,6 +64,7 @@ function lobbyEvents(io, socket) {
       }
     }
     socket.join(roomId);
+    trackRoom(socket, roomId);
     console.log(`[Lobby] subscribeRoom success; joined socket to roomId=${roomId}`);
     if (callback) callback({ success: true, room });
     console.log(`[Lobby] Emitting roomUpdated (subscribe) to roomId=${roomId} players=${room.players.length}`);
@@ -81,9 +95,15 @@ function lobbyEvents(io, socket) {
       return;
     }
     
-    // Set room status to in-progress
-    room.status = "in-progress";
-    console.log(`[Lobby] startGame success; room status set to in-progress roomId=${roomId}`);
+    // Initialize game state
+    const gameInitResult = initializeGameState(roomId);
+    if (!gameInitResult.success) {
+      console.warn(`[Lobby] startGame failed; could not initialize game state roomId=${roomId}`);
+      if (callback) callback({ success: false, message: gameInitResult.message });
+      return;
+    }
+    
+    console.log(`[Lobby] startGame success; game state initialized roomId=${roomId}`);
     
     if (callback) callback({ success: true, room });
     
@@ -107,14 +127,13 @@ function lobbyEvents(io, socket) {
         .some(s => s.user && s.user.userId === userId);
       
       if (!userReconnected) {
-        console.log(`[Lobby] User ${userId} did not reconnect, removing from all rooms`);
-        // Remove player from all rooms they were in
-        io.sockets.adapter.rooms.forEach((_, roomId) => {
-          console.log(`[Lobby] disconnect userId=${userId} removing from roomId=${roomId}`);
+        const roomIds = socket.data.gameRoomIds
+          ? Array.from(socket.data.gameRoomIds)
+          : [];
+        roomIds.forEach((roomId) => {
           removePlayerFromRoom(roomId, userId);
           const room = getRoom(roomId);
           if (room) {
-            console.log(`[Lobby] Emitting roomUpdated (disconnect) to roomId=${roomId} players=${room.players.length}`);
             io.to(roomId).emit("roomUpdated", room);
           }
         });

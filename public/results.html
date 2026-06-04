@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NPAT — Results</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/results.js" defer></script>
+</head>
+<body>
+  <main class="page results-page">
+    <header class="page-header">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <h1>Results</h1>
+      <p class="tagline">Room <span class="room-code" id="pageRoomId">—</span></p>
+    </header>
+
+    <section class="card">
+      <div id="loadingSpinner" class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Loading results…</p>
+      </div>
+
+      <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+      <div id="resultsContainer" style="display: none;"></div>
+    </section>
+  </main>
+</body>
+</html>
