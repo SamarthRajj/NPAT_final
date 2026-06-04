@@ -65,10 +65,10 @@ async function loadRoomsFromRedis() {
     const client = getPubClient();
     let cursor = "0";
     do {
-      const reply = await client.scan(cursor, { MATCH: "room:*", COUNT: 100 });
-      const nextCursor = reply.cursor ?? reply[0];
+      const reply = await client.scan(cursor, "MATCH", "room:*", "COUNT", 100);
+      const nextCursor = reply[0];
       cursor = String(nextCursor ?? "0");
-      const keys = reply.keys ?? reply[1] ?? [];
+      const keys = reply[1] ?? [];
       for (const key of keys) {
         try {
           const raw = await client.get(key);

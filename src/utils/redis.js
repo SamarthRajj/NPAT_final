@@ -4,11 +4,15 @@ let pubClient = null;
 let subClient = null;
 
 async function connectRedis(url) {
-  if (pubClient && subClient) return { pubClient, subClient };
+  if (pubClient && subClient) {
+    return { pubClient, subClient };
+  }
 
   const redisUrl = url || process.env.REDIS_URL || "redis://127.0.0.1:6379";
-  pubClient = new Redis(redisUrl);
-  subClient = pubClient.duplicate();
+  const redisOptions = { lazyConnect: true };
+
+  pubClient = new Redis(redisUrl, redisOptions);
+  subClient = pubClient.duplicate(redisOptions);
 
   pubClient.on("error", (err) => console.error("Redis PubClient Error", err));
   subClient.on("error", (err) => console.error("Redis SubClient Error", err));
