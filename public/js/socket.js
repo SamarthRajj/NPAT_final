@@ -40,6 +40,11 @@ function connectSocket() {
     document.getElementById("status").textContent = "Connected";
   });
 
+  socket.on("connect_error", (err) => {
+    document.getElementById("status").textContent = `Connection error: ${err.message}`;
+    console.error("Socket connect_error", err);
+  });
+
   socket.on("disconnect", () => {
     document.getElementById("status").textContent = "Disconnected";
   });

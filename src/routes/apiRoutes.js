@@ -1,15 +1,9 @@
 const express = require("express");
-const { generateToken, verifyToken } = require("../middleware/auth");
+const { generateToken, authenticateRequest } = require("../middleware/auth");
 const { getRoom, serializeGameState } = require("../game/roomManager");
 const { getComprehensiveResults } = require("../game/resultManager");
 
 const router = express.Router();
-
-function authFromHeader(req) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
-  return verifyToken(authHeader.substring(7));
-}
 
 router.get("/api/health", (_req, res) => {
   res.json({
@@ -28,15 +22,15 @@ router.post("/login", (req, res) => {
   res.json({ token, userId, username });
 });
 
-router.get("/api/rooms/:roomId", (req, res) => {
-  const user = authFromHeader(req);
-  if (!user) {
-    return res.status(401).json({ success: false, message: "Invalid or missing token" });
-  }
-
+router.get("/api/rooms/:roomId", authenticateRequest, (req, res) => {
   const room = getRoom(req.params.roomId);
   if (!room) {
     return res.status(404).json({ success: false, message: "Room not found" });
+  }
+
+  const authorized = room.players.some((player) => player.userId === req.user.userId);
+  if (!authorized) {
+    return res.status(403).json({ success: false, message: "Not authorized for this room" });
   }
 
   res.json({
@@ -51,10 +45,15 @@ router.get("/api/rooms/:roomId", (req, res) => {
   });
 });
 
-router.get("/api/results/:roomId", (req, res) => {
-  const user = authFromHeader(req);
-  if (!user) {
-    return res.status(401).json({ success: false, message: "Invalid or missing token" });
+router.get("/api/results/:roomId", authenticateRequest, (req, res) => {
+  const room = getRoom(req.params.roomId);
+  if (!room) {
+    return res.status(404).json({ success: false, message: "Room not found" });
+  }
+
+  const authorized = room.players.some((player) => player.userId === req.user.userId);
+  if (!authorized) {
+    return res.status(403).json({ success: false, message: "Not authorized for this room" });
   }
 
   try {
