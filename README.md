@@ -33,7 +33,9 @@ npm run dev
 
 Open `http://localhost:5000`
 
-> Optionally set `JWT_SECRET` in environment for production security.
+> Optionally set `JWT_SECRET` and `REDIS_URL` in environment for production security.
+>
+> Example: `REDIS_URL="rediss://default:<token>@unified-corgi-143457.upstash.io:6379"`
 
 ## How to play
 
