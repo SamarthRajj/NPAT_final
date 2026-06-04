@@ -4,7 +4,8 @@ const resultEvents = require("./resultEvents");
 
 function socketHandler(io) {
   io.on("connection", (socket) => {
-    console.log(`User connected: ${socket.user.userId}`);
+    const userId = socket.user?.userId || "unknown";
+    console.log(`User connected: ${userId}`);
     lobbyEvents(io, socket);
     gameEvents(io, socket);
     resultEvents(io, socket);

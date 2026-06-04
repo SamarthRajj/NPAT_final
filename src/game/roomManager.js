@@ -1,4 +1,91 @@
 const rooms = new Map();
+const { getPubClient } = require("../utils/redis");
+
+function normalizeRoom(room) {
+  if (!room || !room.gameState) return room;
+
+  if (Array.isArray(room.gameState.submittedPlayers)) {
+    room.gameState.submittedPlayers = new Set(room.gameState.submittedPlayers);
+  }
+
+  if (Array.isArray(room.gameState.usedLetters)) {
+    room.gameState.usedLetters = new Set(room.gameState.usedLetters);
+  }
+
+  return room;
+}
+
+function roomToRedisPayload(room) {
+  return {
+    ...room,
+    gameState: room.gameState
+      ? {
+          ...room.gameState,
+          submittedPlayers: Array.from(room.gameState.submittedPlayers || []),
+          usedLetters: Array.from(room.gameState.usedLetters || []),
+        }
+      : null,
+  };
+}
+
+async function saveRoomToRedis(room) {
+  try {
+    const client = getPubClient();
+    await client.set(`room:${room.id}`, JSON.stringify(roomToRedisPayload(room)), { EX: 60 * 60 });
+  } catch (err) {
+    console.error("Failed to save room to Redis", err);
+  }
+}
+
+async function deleteRoomFromRedis(roomId) {
+  try {
+    const client = getPubClient();
+    await client.del(`room:${roomId}`);
+  } catch (err) {
+    console.error("Failed to delete room from Redis", err);
+  }
+}
+
+async function loadRoomFromRedis(roomId) {
+  try {
+    const client = getPubClient();
+    const raw = await client.get(`room:${roomId}`);
+    if (!raw) return null;
+    const room = normalizeRoom(JSON.parse(raw));
+    rooms.set(room.id, room);
+    return room;
+  } catch (err) {
+    console.error("Failed to load room from Redis", err);
+    return null;
+  }
+}
+
+async function loadRoomsFromRedis() {
+  try {
+    const client = getPubClient();
+    let cursor = "0";
+    do {
+      const reply = await client.scan(cursor, { MATCH: "room:*", COUNT: 100 });
+      const nextCursor = reply.cursor ?? reply[0];
+      cursor = String(nextCursor ?? "0");
+      const keys = reply.keys ?? reply[1] ?? [];
+      for (const key of keys) {
+        try {
+          const raw = await client.get(key);
+          if (raw) {
+            const room = normalizeRoom(JSON.parse(raw));
+            rooms.set(room.id, room);
+          }
+        } catch (e) {
+          console.error("Failed to load room key", key, e);
+        }
+      }
+    } while (cursor !== "0");
+    console.log(`[Redis] Loaded ${rooms.size} rooms from Redis`);
+  } catch (err) {
+    console.error("Failed to load rooms from Redis", err);
+  }
+}
 
 function debugPrintRooms(action, roomId) {
   try {
@@ -36,6 +123,7 @@ function createRoom(roomId, user) {
   console.log("createRoom", room);
   rooms.set(roomId, room);
   debugPrintRooms("createRoom", roomId);
+  saveRoomToRedis(room).catch(() => {});
   return { success: true, room };
 }
 
@@ -52,6 +140,7 @@ function joinRoom(roomId, user) {
 
   room.players.push(user);
   debugPrintRooms("joinRoom", roomId);
+  saveRoomToRedis(room).catch(() => {});
   return { success: true, room };
 }
 
@@ -65,6 +154,9 @@ function removePlayerFromRoom(roomId, userId) {
   room.players = room.players.filter((p) => p.userId !== userId);
   if (room.players.length === 0) {
     rooms.delete(roomId);
+    deleteRoomFromRedis(roomId).catch(() => {});
+  } else {
+    saveRoomToRedis(room).catch(() => {});
   }
 }
 
@@ -93,6 +185,7 @@ function initializeGameState(roomId) {
   
   console.log(`[Game] Initialized game state for roomId=${roomId}`);
   debugPrintRooms("initializeGameState", roomId);
+  saveRoomToRedis(room).catch(() => {});
   return { success: true, gameState };
 }
 
@@ -159,7 +252,7 @@ function startRound(roomId) {
 
   console.log(`[Game] Started round ${room.gameState.round} with letter '${randomLetter}' for roomId=${roomId}`);
   debugPrintRooms("startRound", roomId);
-  
+  saveRoomToRedis(room).catch(() => {});
   return { 
     success: true, 
     gameState: serializeGameState(room.gameState),
@@ -205,7 +298,7 @@ function submitAnswer(roomId, userId, submission) {
 
   console.log(`[Game] User ${userId} submitted answer for round ${room.gameState.round} in roomId=${roomId}`);
   debugPrintRooms("submitAnswer", roomId);
-
+  saveRoomToRedis(room).catch(() => {});
   return { 
     success: true, 
     gameState: serializeGameState(room.gameState),
@@ -306,6 +399,7 @@ function nextRound(roomId) {
     room.status = "finished";
     bumpGameState(room);
     console.log(`[Game] Game finished for roomId=${roomId} after round ${completedRound}`, finalScores);
+    saveRoomToRedis(room).catch(() => {});
     return {
       success: true,
       gameFinished: true,
@@ -319,7 +413,7 @@ function nextRound(roomId) {
   room.gameState.round++;
   bumpGameState(room);
   console.log(`[Game] Moving to round ${room.gameState.round} for roomId=${roomId}`);
-  
+  saveRoomToRedis(room).catch(() => {});
   return {
     success: true,
     gameFinished: false,
@@ -371,4 +465,6 @@ module.exports = {
   getGameResults,
   serializeGameState,
   bumpGameState,
+  loadRoomsFromRedis,
+  loadRoomFromRedis,
 };

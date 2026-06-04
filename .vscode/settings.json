@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd \"d:\\\\SAMARTH RAJ\\\\Skills\\\\NPAT\"; node --check server\\.js ; node --check src/routes/apiRoutes\\.js$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
