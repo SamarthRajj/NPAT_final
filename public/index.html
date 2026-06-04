@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NPAT — Play</title>
+  <title>NPAT — Multiplayer Word Game</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/socket.js" defer></script>
@@ -14,9 +14,23 @@
       <div class="brand-mark" aria-hidden="true"></div>
       <h1>NPAT</h1>
       <p class="tagline">Name · Place · Animal · Thing — real-time multiplayer</p>
+      <p class="description">
+        A realtime browser game built with Node.js, Express, Socket.IO, and JWT-authenticated WebSockets.
+        Create or join a room, play 3 rounds with friends, and view the final server-calculated results.
+      </p>
     </header>
 
     <section class="card">
+      <div class="intro">
+        <h2>How it works</h2>
+        <ol>
+          <li>Enter a username and connect.</li>
+          <li>Create a room or join an existing one with a room code.</li>
+          <li>Wait in the lobby until at least 2 players have joined.</li>
+          <li>The room creator starts the game and advances rounds.</li>
+          <li>Submit a valid answer each round and view final scores.</li>
+        </ol>
+      </div>
       <div id="login">
         <div class="field">
           <label for="username">Username</label>

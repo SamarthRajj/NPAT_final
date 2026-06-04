@@ -1,6 +1,22 @@
 # NPAT — Real-Time Multiplayer Platform
 
-**Name · Place · Animal · Thing** — a real-time multiplayer word game built with Node.js, Express, and Socket.IO.
+**Name · Place · Animal · Thing** is a real-time multiplayer word game prototype built with Node.js, Express, and Socket.IO.
+
+This repository is intended to show a full-stack realtime app with:
+- authenticated socket connections
+- room-based multiplayer event routing
+- live lobby/game/results UI flows
+- server-managed game lifecycle and scoring
+- REST endpoints for health, room state, and results
+
+## Why this project
+
+This project is a strong interview example because it demonstrates:
+- backend architecture for multiplayer games
+- WebSocket authentication with JWT
+- separation of concerns between REST APIs and Socket.IO event handlers
+- client-side state sync for lobby, game, and results screens
+- technical tradeoffs between in-memory state and persistence
 
 ## Live demo
 
@@ -8,106 +24,117 @@ Deploy to [Render](https://render.com) using the included `render.yaml`, then se
 
 `https://your-service.onrender.com`
 
-## Features
-
-- Event-driven Socket.IO backend with JWT auth (HTTP + WebSocket)
-- Room-level isolation (`io.to(roomId)`) for up to 4 players per session
-- 3-round game lifecycle with server-side scoring and finish guards
-- Delta-style `gameStateUpdate` broadcasts with monotonic `eventId` deduplication
-- REST APIs: `/login`, `/api/health`, `/api/rooms/:roomId`, `/api/results/:roomId`
-- Minimal black-and-white UI with accent highlights
-
-## Architecture
-
-```
-Browser (index → lobby → game → results)
-    │  REST: login, results, room snapshot
-    └── WebSocket: create/join, rounds, submissions, gameFinished
-              │
-         Express + Socket.IO
-              │
-         roomManager (in-memory Map)
-         resultManager (leaderboard, stats)
-```
-
-## Run locally
+## Quick start
 
 ```bash
 npm install
-cp .env.example .env   # optional: set JWT_SECRET
-npm run dev            # or npm start
+npm run dev
 ```
 
 Open `http://localhost:5000`
 
-## Game flow
+> Optionally set `JWT_SECRET` in environment for production security.
 
-1. Login with a username → create or join a room
-2. Lobby: admin starts when ≥2 players
-3. Admin starts each round → players submit answers for the letter
-4. Admin clicks **Next round** after all submit (3 rounds total)
-5. **Game Finished** → **View Results** for full breakdown
+## How to play
 
-## Benchmarks
+1. Open the homepage.
+2. Enter a username and click **Login**.
+3. Create a room or join an existing one using the room code.
+4. In the lobby, wait until at least 2 players are connected.
+5. The room creator clicks **Start Game**.
+6. Each round shows a random letter; all players submit words matching the prompt.
+7. After everyone submits, the creator advances to the next round.
+8. After 3 rounds, the game ends and the results page displays scores.
 
-### Payload size (run locally)
+## What a first-time visitor should know
+
+- This is not a single-player app: game state is shared across connected clients.
+- Rooms are isolated using Socket.IO room channels (`io.to(roomId)`).
+- Authentication is handled with JWT tokens in both REST and WebSocket flows.
+- The server controls the game lifecycle and validates actions like start/submit.
+- Results are computed on the server and presented in a final summary page.
+
+## Core features
+
+- `POST /login` issues a JWT for the browser client
+- Socket.IO auth middleware validates the token on every connection
+- Lobby events: `createRoom`, `joinRoom`, `subscribeRoom`, `startGame`
+- Game events: `startRound`, `submitAnswer`, `nextRound`
+- Result events: `gameFinished`, final scoreboard delivery
+- REST endpoints for health, room snapshots, and finished-game results
+
+## System architecture
+
+```text
+Browser UI
+  ├─ public/index.html   # login
+  ├─ public/lobby.html   # room waiting area
+  ├─ public/game.html    # live round play
+  └─ public/results.html # final score summary
+
+Express server (server.js)
+  ├─ REST routes in src/routes/apiRoutes.js
+  ├─ Socket.IO auth + rooms in src/sockets/*.js
+  ├─ Redis adapter support (optional, pub/sub for multi-instance)
+  └─ room state + scoring in src/game/*.js
+```
+
+## Run locally in development
 
 ```bash
-node scripts/benchmark-payload.js
+npm install
+npm run dev
 ```
 
-Example output (`node scripts/benchmark-payload.js`):
+Then open `http://localhost:5000` and follow the game flow.
 
-```
-Full gameState: 532 bytes
-Delta update:    155 bytes
-Reduction:       ~71% smaller per high-frequency emit
-```
+## API reference
 
-### Latency (measure in browser)
+| Method | Path | Purpose | Auth |
+|--------|------|---------|------|
+| POST | `/login` | Get JWT for player | no |
+| GET | `/api/health` | Server health check | no |
+| GET | `/api/rooms/:roomId` | Retrieve room state | Bearer JWT |
+| GET | `/api/results/:roomId` | Get finished-game results | Bearer JWT |
 
-1. Open 2–4 tabs, join the same room, complete one round.
-2. In DevTools → Network → WS, or add `performance.now()` around `submitAnswer` ack in `game.js`.
-3. Record p50 / p95 round-trip time for `submitAnswer` callbacks.
-4. Repeat on Render after deploy and document honestly in your resume.
+## Interview talking points
 
-**Template for resume** (replace with your measurements):
-
-> Optimized network payload via game-state delta updates (~[X]% smaller than full-state broadcasts). Measured p50 [N]ms / p95 [M]ms submit-answer latency with [P] concurrent players on [localhost | Render free tier].
-
-## API
-
-| Method | Path | Auth |
-|--------|------|------|
-| POST | `/login` | — |
-| GET | `/api/health` | — |
-| GET | `/api/rooms/:roomId` | Bearer JWT |
-| GET | `/api/results/:roomId` | Bearer JWT (game must be finished) |
+- Built with Node.js, Express 5, Socket.IO 4, and JWT auth.
+- Demonstrates realtime room-based architecture and message routing.
+- Includes a modular router layer (`src/routes/apiRoutes.js`) and socket handler layer (`src/sockets/`).
+- Supports room persistence helpers and Redis adapter wiring for multi-instance scaling.
+- Uses server-side scoring and final result aggregation to keep game logic authoritative.
 
 ## Deploy on Render
 
-1. Push repo to GitHub
-2. New **Web Service** → connect repo (or use Blueprint / `render.yaml`)
-3. Set `JWT_SECRET` in environment
-4. Build: `npm install` · Start: `npm start`
+1. Push repo to GitHub.
+2. Create a new Render Web Service and connect the repo.
+3. Set `JWT_SECRET` in the service environment variables.
+4. Use `npm install` for build and `npm start` for start.
 
-**Note:** Rooms are in-memory. A single instance is required; restarts clear active games.
+> Note: active rooms are in-memory by default, so restarting the service will clear unfinished games.
 
 ## Project structure
 
-```
-server.js                 # HTTP + Socket.IO entry
-src/game/roomManager.js   # Rooms, rounds, scoring
-src/game/resultManager.js # Results formatting
-src/sockets/              # lobby, game, result handlers
-public/                   # Static UI
+```text
+server.js                     # HTTP + Socket.IO startup
+src/routes/apiRoutes.js       # REST API routes and auth handling
+src/middleware/auth.js        # JWT generation and verification
+src/sockets/                  # socket event handlers for lobby, game, and results
+src/game/roomManager.js       # room lifecycle, join/create, scoring, persistence helpers
+src/game/resultManager.js     # finished-game results formatting
+src/utils/redis.js            # Redis client and adapter helpers
+public/                       # client pages and browser socket logic
+scripts/benchmark-payload.js  # payload comparison benchmark
 ```
 
 ## Tech stack
 
-- Node.js, Express 5
+- Node.js
+- Express 5
 - Socket.IO 4
 - JSON Web Tokens
+- Redis support for pub/sub scaling
 
 ## License
 
